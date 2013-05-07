@@ -5,7 +5,7 @@ sync_flags=""
 
 repo_sync() {
 	rm -rf .repo/manifest* &&
-	$REPO init -u $GITREPO -b $BRANCH -m $1.xml $REPO_INIT_FLAGS &&
+	$REPO init $INIT_ARG -u $GITREPO -b $BRANCH -m $1.xml $REPO_INIT_FLAGS &&
 	$REPO sync $sync_flags $REPO_SYNC_FLAGS
 	ret=$?
 	if [ "$GITREPO" = "$GIT_TEMP_REPO" ]; then
@@ -73,6 +73,10 @@ fi
 echo MAKE_FLAGS=-j$((CORE_COUNT + 2)) > .tmp-config
 echo GECKO_OBJDIR=$PWD/objdir-gecko >> .tmp-config
 echo DEVICE_NAME=$1 >> .tmp-config
+
+if [ -n "$B2G_LOCAL_MIRROR" ]; then
+	INIT_ARG="--reference=$B2G_LOCAL_MIRROR"
+fi
 
 case "$1" in
 "galaxy-s2")
@@ -173,8 +177,14 @@ case "$1" in
 	repo_sync $1
 	;;
 
+"mirror")
+	echo DEVICE=mirror > .tmp-config
+	INIT_ARG='--mirror'
+	repo_sync mirror
+	;;
+
 *)
-	echo "Usage: $0 [-cdflnq] (device name)"
+	echo "Usage: $0 [-cdflnq] (device name | mirror)"
 	echo "Flags are passed through to |./repo sync|."
 	echo
 	echo Valid devices to configure are:
@@ -219,4 +229,10 @@ fi
 
 mv .tmp-config .config
 
-echo Run \|./build.sh\| to start building
+if [ "$1" = "mirror" ]; then
+	echo 'Local mirror complete. To use, add the following to your env:'
+	echo "  export B2G_LOCAL_MIRROR='$PWD'"
+	echo 'Then run ./config.sh in a separate B2G directory.'
+else
+	echo Run \|./build.sh\| to start building
+fi

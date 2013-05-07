@@ -2,6 +2,11 @@
 
 . load-config.sh
 
+if [ "$DEVICE" = "mirror" ] ; then
+    echo "Error: local mirror created with |./config.sh mirror| cannot be built"
+    exit 1
+fi
+
 export USE_CCACHE=yes &&
 export GECKO_PATH &&
 export GAIA_PATH &&
